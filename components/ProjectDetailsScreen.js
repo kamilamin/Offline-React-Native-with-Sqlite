@@ -7,8 +7,20 @@ export default class ProductDetailsScreen extends Component {
     };
     render() {
         return (
-            <View>
-                
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                <Text>Add Product</Text>
+                <Button  
+                    title="Go to Add Product . . . Again"
+                    onPress={() => this.props.navigation.navigate('AddProduct')}
+                />
+                <Button 
+                    title="Go to Home"
+                    onPress={() => this.props.navigation.navigate('Product')}
+                />
+                <Button 
+                    title="Go Back"
+                    onPress={() => this.props.navigation.goBack()}
+                />
             </View>
         )
     }
