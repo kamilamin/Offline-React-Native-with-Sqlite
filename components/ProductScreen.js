@@ -1,27 +1,128 @@
-import React, { Component } from "react";
-import { View, Text, Button } from "react-native";
+import React, {Component} from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
+import {ListItem, Button} from 'react-native-elements';
+import Database from '../Database';
+
+const db = new Database ();
 
 export default class ProductScreen extends Component {
-    static navigationOptions = {
-        title: 'Product List'
+  static navigationOptions = ({navigation}) => {
+    return {
+      title: 'Product List',
+      headerRight: (
+        <Button
+          buttonStyle={{padding: 0, backgroundColor: 'transparent'}}
+          icon={{name: 'add-circle', style: {marginRight: 0, fontSize: 28}}}
+          onPress={() => {
+            navigation.navigate ('AddProduct', {
+              onNavigateBack: this.handleOnNavigateBack,
+            });
+          }}
+        />
+      ),
     };
-    render(){
-        return(
-            <View style={{flex: 1, alignItems: 'center', justifyContent:'center'}}>
-                <Text>Product List</Text>
-                <Button 
-                    title="Go To Details"
-                    onPress={() => this.props.navigation.navigate("ProductDetails")}
-                />
-                <Button 
-                    title="Go To Add Details"
-                    onPress={() => this.props.navigation.navigate("AddProduct")}
-                />
-                <Button 
-                    title="Go To Edit Details"
-                    onPress={() => this.props.navigation.navigate("EditProduct")}
-                />
-            </View>
-        )
-    }
+  };
+  constructor () {
+    super ();
+    this.state = {
+      isLoading: true,
+      products: [],
+      noFound: 'Products not found. \n Add product by pressing above button',
+    };
+  }
+  componentDidMount () {
+    this._subscribe = this.props.navigation.addListner ('didFocus', () => {
+      this.getProducts ();
+    });
+    console.log ('Did Mount');
+  }
+  getProducts () {
+    let products = [];
+    db
+      .listProduct ()
+      .then (data => {
+        products = data;
+        this.setState ({
+          products,
+          isLoading: false,
+        });
+      })
+      .catch (err => {
+        console.log (err);
+        this.setState ({
+          isLoading: false,
+        });
+      });
+  }
+  keyExtractor = (item, index) => index.toString();
+  renderItem = ({item}) => (
+      <ListItem 
+        title={item.prodName}
+        leftAvatar={{
+            source: item.prodImage && {uri: item.prodImage},
+            title: item.prodName[0]
+        }}
+        onPress={() => {
+            this.props.navigation.navigate('ProductDetails', {
+                prodId: `${item.prodId}`
+            })
+        }}
+        chevron
+        bottomDivider
+      />
+  )
+
+  render () {
+      if(this.state.isLoading){
+          return(
+              <View style={styles.activity}>
+                  <ActivityIndicator size="large" color="#0000ff" />
+              </View>
+          )
+      }
+      if(this.state.products.length === 0){
+          <View>
+              <Text style={styles.message}>{this.state.noFound}</Text>
+          </View>
+      }
+    return (
+        <FlatList 
+            keyExtractor={this.keyExtractor}
+            data={this.state.products}
+            renderItem={this.renderItem}
+        />
+    );
+  }
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        paddingBottom: 22
+    },
+    item: {
+        padding: 10,
+        fontSize: 18,
+        height: 44
+    },
+    activity: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        alignItem: "center",
+        justifyContent: "center"
+    },
+    message: {
+        padding: 16,
+        fontSize: 18,
+        color: "red"
+    }
+})
